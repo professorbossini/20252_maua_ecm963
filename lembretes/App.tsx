@@ -14,26 +14,22 @@ import {
 import { AntDesign } from '@expo/vector-icons'
 
 interface Lembrete {
-  id: string;
+  id?: string;
   texto: string;
 }
 
 export default function App() {
-  const [lembrete, setLembrete] = useState('')
+  const [lembrete, setLembrete] = useState<Lembrete>({texto: ''})
   const [lembretes, setLembretes] = useState<Lembrete[]>([])
-  //   - construir um objeto Lembrete com id igual à data atual do sistema e texto  igual ao valor
-  // existente na variável de estado chamada lembrete
-  // - utilizar o hook associado à lista de lembretes a fim de adicionar o lembrete à lista,
-  // garantindo a atualização da tela
-  // - atualizar a variável lembrete armazenando a cadeia vazia, limpando portando o campo em
-  // que o usuário digita seus lembretes
+  const [emModoDeEdicao, setEmModoDeEdicao] = useState(false)
+  
   const adicionar = () => {
     const novoLembrete: Lembrete = {
       id: Date.now().toString(),
-      texto: lembrete
+      texto: lembrete.texto
     }
     setLembretes(lembretesAtuais => [novoLembrete, ...lembretesAtuais])
-    setLembrete('')
+    setLembrete({texto: ''})
   }
   const remover = (lembrete: Lembrete) => {
     console.log('chamou a remover...')
@@ -62,25 +58,41 @@ export default function App() {
     // )
 
   }
+
+  const atualizar = () => {
+    //usar mecanismos js ou ts para atualizar apenas o lembrete envolvido no momento, gerando uma lista nova
+    const lembretesAtualizados = lembretes.map((item => {
+      if(item.id === lembrete.id)
+        return lembrete
+      return item
+    }))
+    //atualizar a variável de estado depois disso, usando a lista nova
+    setLembretes(lembretesAtualizados)
+    //colocar a aplicaçaõ em modo de adição
+    setEmModoDeEdicao(false)
+    //limpa o campo em que o usuário digitou
+    setLembrete({texto: ''})
+  }
   return (
     <View style={styles.container}>
+      <Text>{`id: ${lembrete.id}, texto: ${lembrete.texto}`}</Text>
       <TextInput
         style={styles.input}
         placeholder='Digite um lembrete...'
-        onChangeText={setLembrete}
-        value={lembrete}
+        onChangeText={(novoTexto) => setLembrete({id: lembrete.id, texto: novoTexto})}
+        value={lembrete.texto}
       />
       <Pressable
-        onPress={adicionar}
+        onPress={emModoDeEdicao ? atualizar: adicionar}
         style={styles.button}>
         <Text
           style={styles.buttonText}>
-          Salvar lembrete
+          {`${emModoDeEdicao ? 'Atualizar' : 'Adicionar'} lembrete`}
         </Text>
       </Pressable>
       <FlatList
         style={styles.list}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id!}
         data={lembretes}
         renderItem={(lembrete => (
           <View
@@ -97,7 +109,11 @@ export default function App() {
                   name="delete"
                   size={24} />
               </Pressable>
-              <Pressable>
+              <Pressable
+                onPress={() => {
+                  setLembrete({id: lembrete.item.id, texto: lembrete.item.texto})
+                  setEmModoDeEdicao(true)
+                }}>
                 <AntDesign
                   name="edit"
                   size={24}
